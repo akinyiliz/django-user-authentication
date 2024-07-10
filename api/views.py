@@ -62,6 +62,7 @@ def UserLogin(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def GetUser(request, pk):
     try:
         user = User.objects.get(pk=pk)
