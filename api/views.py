@@ -1,6 +1,6 @@
 
 from rest_framework.decorators import api_view, permission_classes
-
+from rest_framework.views import APIView
 from django.contrib.auth.decorators import login_required
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -78,22 +78,64 @@ def GetUser(request, pk):
     return Response(res, status=status.HTTP_200_OK)
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])  # Ensures user must be authenticated
-def Getorganizations(request):
-    if not request.user.is_authenticated:
-        return Response({"error": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+class OrganizationView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    organizations = request.user.organizations.all()
-    serializer = OrganizationSerializer(organizations, many=True)
-    res = {
-        "status": "success",
-        "message": "Query Successful",
-        "data": {
-            "organisations": serializer.data
+    def get(self, request):
+        organizations = request.user.organizations.all()
+        serializer = OrganizationSerializer(organizations, many=True)
+        res = {
+            "status": "success",
+            "message": "Query Successful",
+            "data": {
+                "organisations": serializer.data
+            }
         }
-    }
-    return Response(res, status=status.HTTP_200_OK)
+        return Response(res, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = OrganizationSerializer(
+            data=request.data, context={'request': request})
+        if serializer.is_valid():
+            try:
+                serializer.save()
+                res = {
+                    "status": "success",
+                    "message": "Organization created successfully",
+                    "data": serializer.data
+                }
+                return Response(res, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                res = {
+                    "status": "Bad Request",
+                    "message": "Client error",
+                    "statusCode": 400
+                }
+                return Response(res, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            errors = []
+            for field, error_list in serializer.errors.items():
+                for error in error_list:
+                    errors.append({"field": field, "message": str(error)})
+            return Response({"errors": errors}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated])  # Ensures user must be authenticated
+# def Getorganizations(request):
+#     if not request.user.is_authenticated:
+#         return Response({"error": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+
+#     organizations = request.user.organizations.all()
+#     serializer = OrganizationSerializer(organizations, many=True)
+#     res = {
+#         "status": "success",
+#         "message": "Query Successful",
+#         "data": {
+#             "organisations": serializer.data
+#         }
+#     }
+#     return Response(res, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -115,33 +157,33 @@ def GetOrganization(request, org_id):
     return Response(res, status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def CreateOrganization(request):
-    serializer = OrganizationSerializer(
-        data=request.data, context={'request': request})
-    if serializer.is_valid():
-        try:
-            organization = serializer.save()
-            res = {
-                "status": "success",
-                "message": "Organization created successfully",
-                "data": serializer.data
-            }
-            return Response(res, status=status.HTTP_201_CREATED)
-        except Exception as e:
-            res = {
-                "status": "Bad Request",
-                "message": "Client error",
-                "statusCode": 400
-            }
-            return Response(res, status=status.HTTP_400_BAD_REQUEST)
-    else:
-        errors = []
-        for field, error_list in serializer.errors.items():
-            for error in error_list:
-                errors.append({"field": field, "message": str(error)})
-        return Response({"errors": errors}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def CreateOrganization(request):
+#     serializer = OrganizationSerializer(
+#         data=request.data, context={'request': request})
+#     if serializer.is_valid():
+#         try:
+#             serializer.save()
+#             res = {
+#                 "status": "success",
+#                 "message": "Organization created successfully",
+#                 "data": serializer.data
+#             }
+#             return Response(res, status=status.HTTP_201_CREATED)
+#         except Exception as e:
+#             res = {
+#                 "status": "Bad Request",
+#                 "message": "Client error",
+#                 "statusCode": 400
+#             }
+#             return Response(res, status=status.HTTP_400_BAD_REQUEST)
+#     else:
+#         errors = []
+#         for field, error_list in serializer.errors.items():
+#             for error in error_list:
+#                 errors.append({"field": field, "message": str(error)})
+#         return Response({"errors": errors}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
 
 @api_view(['POST'])
