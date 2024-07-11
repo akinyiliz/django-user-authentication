@@ -88,7 +88,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         request = self.context.get('request')
-        for fieldname, field in self.fields.items():
+        for fieldname in self.fields.keys():
             if fieldname not in validated_data:
                 validated_data[f'{fieldname}'] = None
 
